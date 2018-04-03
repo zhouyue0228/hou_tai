@@ -48,7 +48,7 @@ function setUpController() {
         var toAdd = '';
         for(var globalVarName in _globalVars) {
             var val = _globalVars[globalVarName];
-            if(val != null) {
+            if(val != null && val.length > 0) {
                 if(toAdd.length > 0) toAdd += '&';
                 toAdd += globalVarName + '=' + encodeURIComponent(val);
             }
@@ -107,7 +107,6 @@ function setUpController() {
     };
 
     var pluginIds = [];
-    var plugins = {};
     var currentVisibleHostId = null;
     // ---------------------------------------------
     // Adds a tool box frame from a url to the interface. This is useful for loading plugins
@@ -124,55 +123,38 @@ function setUpController() {
         if (!settings.id) throw ('each plugin host needs an id');
 
         var host = $('<div id=' + settings.id + '></div>')
-            .appendTo('#interfaceControlFrameHostContainer');
+            .appendTo('#interfaceControlFrameContainer');
 
-        host.hide();
+        var isCurrentDefault = (pluginIds.length == 0);
+        if (!isCurrentDefault) {
+            host.hide();
+        } else {
+            currentVisibleHostId = settings.id;
+        }
 
-        var headerLink = $('<a pluginId="' + settings.id + '" >' + settings.title.toUpperCase() + '</a>');
+
+        //$('#interfaceControlFrameHeader').append('<li>' + settings.title + '</li>');
+        var headerLink = $('<a pluginId="' + settings.id + '" >' + settings.title + '</a>');
 
         headerLink
-            .click($axure.utils.curry(interfaceControlHeaderButton_click, settings.id)).wrap('<li id="' + settings.id + 'Btn">');
+            .click($axure.utils.curry(interfaceControlHeaderButton_click, settings.id)).wrap('<li>')
+            .parent().appendTo('#interfaceControlFrameHeader');
 
-        if((settings.id == 'feedbackHost' || settings.id == 'feedbackContainer') && pluginIds[pluginIds.length - 1] == 'debugHost') headerLink.parent().insertBefore('#debugHostBtn');
-        else headerLink.parent().appendTo('#interfaceControlFrameHeader');
-        
+        if (isCurrentDefault) {
+            headerLink.addClass('selected');
+        }
+
         pluginIds[pluginIds.length] = settings.id;
-        plugins[settings.id] = settings;
-
-        $(document).trigger('pluginCreated', [settings.gid]);
     };
 
     // private methods
     var interfaceControlHeaderButton_click = function (id) {
-        var clickedPlugin = $('#interfaceControlFrameHeader a[pluginId=' + id + ']');
-        if(clickedPlugin.hasClass('selected')) {
-            clickedPlugin.removeClass('selected');
-            $('#' + id).hide();
-            _player.collapseToBar();
+        $('#interfaceControlFrameHeader a').removeClass('selected');
+        $('#interfaceControlFrameHeader a[pluginId=' + id + ']').addClass('selected');
 
-            $(document).trigger('pluginShown',['']);
-        } else {
-            $('#interfaceControlFrameHeader a').removeClass('selected');
-            clickedPlugin.addClass('selected');
-
-            $('#' + currentVisibleHostId).hide();
-            $('#' + id).show();
-            currentVisibleHostId = id;
-            _player.expandFromBar();
-
-            $(document).trigger('pluginShown', [plugins[id].gid]);
-        }
-
-        $(document).trigger('ContainerHeightChange');
-    };
-
-    $axure.player.showPlugin = function(gid) {
-        for(var id in plugins) {
-            if(plugins[id].gid == gid) {
-                $('a[pluginId="' + id + '"]').click();
-                break;
-            }
-        }
+        $('#' + currentVisibleHostId).hide();
+        $('#' + id).show();
+        currentVisibleHostId = id;
     };
 }
 

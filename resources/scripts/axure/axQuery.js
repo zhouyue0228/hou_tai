@@ -61,18 +61,10 @@
         return $(document.getElementById(id));
     };
 
-    window.$jobjAll = function(id) {
-        return $addAll($jobj(id), id);
-    };
-
-    window.$addAll = function(jobj, id) {
-        return jobj.add($jobj(id + '_ann')).add($jobj(id + '_ref'));
-    };
-
     $ax.INPUT = function(id) { return id + "_input"; };
-    $ax.IsImageFocusable = function (type) { return $ax.public.fn.IsImageBox(type) || $ax.public.fn.IsVector(type) || $ax.public.fn.IsTreeNodeObject(type) || $ax.public.fn.IsTableCell(type); };
-    $ax.IsTreeNodeObject = function (type) { return $ax.public.fn.IsTreeNodeObject(type); };
-    $ax.IsSelectionButton = function (type) { return $ax.public.fn.IsCheckBox(type) || $ax.public.fn.IsRadioButton(type); };
+    $ax.IsImageFocusable = function(type) { return type == 'imageBox' || type == 'buttonShape' || type == 'flowShape' || type == 'treeNodeObject' || type == 'tableCell'; };
+    $ax.IsTreeNodeObject = function(type) { return type == 'treeNodeObject'; };
+    $ax.IsSelectionButton = function(type) { return type == 'checkbox' || type == 'radioButton'; };
 
     var _fn = {};
     $axure.fn = _fn;
@@ -126,7 +118,7 @@
     var _getFilterFnFromQuery = function(query) {
         var filter = function(diagramObject, elementId) {
             // Non diagram objects are allowed to be queryed, such as text inputs.
-            if (diagramObject && !$ax.public.fn.IsReferenceDiagramObject(diagramObject.type) && !document.getElementById(elementId)) return false;
+            if(diagramObject && diagramObject.type != 'referenceDiagramObject' && !document.getElementById(elementId)) return false;
             var retVal = true;
             for(var i = 0; i < query.filterFunctions.length && retVal; i++) {
                 retVal = query.filterFunctions[i](diagramObject, elementId);
@@ -181,57 +173,32 @@
     };
 
     // Deep means to keep getting parents parent until at the root parent. Parent is then an array instead of an id.
-    // Filter options: layer, rdo, repeater, item, dynamicPanel, state
-    $ax.public.fn.getParents = function (deep, filter) {
-        if(filter == '*') filter = ['layer', 'rdo', 'repeater', 'item', 'dynamicPanel', 'state'];
+    $ax.public.fn.getParents = function(deep) {
         var elementIds = this.getElementIds();
         var parentIds = [];
 
         var getParent = function(elementId) {
-            var containerIndex = elementId.indexOf('_container');
-            if(containerIndex != -1) elementId = elementId.substring(0, containerIndex);
-
-            // Layer only references it if it is a direct layer to it
-            var parent = $ax.getLayerParentFromElementId(elementId);
-            // If layer is allowed we found parent, otherwise ignore and keep climbing
-            if (parent) return filter.indexOf('layer') != -1 ? parent : getParent(parent);
-
-            // if repeater item, then just return repeater
+            var parent = undefined;
             var scriptId = $ax.repeater.getScriptIdFromElementId(elementId);
             var itemNum = $ax.repeater.getItemIdFromElementId(elementId);
             var parentRepeater = $ax.getParentRepeaterFromScriptId(scriptId);
-
-            // scriptId is item or repeater itself
-            if (parentRepeater == scriptId) {
-                // If you are repeater item, return your repeater
-                if(itemNum) return filter.indexOf('repeater') != -1 ? scriptId : getParent(scriptId);
-                // Otherwise you are actually at repeater, clean parentRepeater, or else you loop
+            // Repeater references self, constantly if it is treated as its own parent in this case infinite recursion occurs.
+            if(parentRepeater == scriptId) {
                 parentRepeater = undefined;
+                itemNum = '';
             }
             
-            // if state, then just return panel
-            if(scriptId.indexOf('_state') != -1) {
-                var panelId = $ax.repeater.createElementId(scriptId.split('_')[0], itemNum);
-                // If dynamic panel is allowed we found parent, otherwise ignore and keep climbing
-                return filter.indexOf('dynamicPanel') != -1 ? panelId : getParent(panelId);
-            }
-
-            var parentType = '';
             if(parentRepeater) {
-                parentType = 'item';
-                parent = $ax.repeater.createElementId(parentRepeater, itemNum);
+                parentRepeater = $ax.repeater.createElementId(parentRepeater, itemNum);
+                parent = parentRepeater;
             }
 
             var masterPath = $ax.getPathFromScriptId($ax.repeater.getScriptIdFromElementId(elementId));
             masterPath.pop();
             if(masterPath.length > 0) {
-                var masterId = $ax.getElementIdFromPath(masterPath, { itemNum: itemNum });
-                if(!masterId) return undefined;
-                var masterRepeater = $ax.getParentRepeaterFromElementId($ax.repeater.getScriptIdFromElementId(masterId));
-                if(!parentRepeater || masterRepeater) {
-                    parentType = 'rdo';
-                    parent = masterId;
-                }
+                var masterId = $ax.getElementIdFromPath(masterPath, {itemNum: itemNum});
+                var masterRepeater = $ax.getParentRepeaterFromScriptId($ax.repeater.getScriptIdFromElementId(masterId));
+                if(!parentRepeater || masterRepeater) parent = masterId;
             }
 
             var obj = $obj(elementId);
@@ -241,17 +208,12 @@
                 // If there is a parent master, the dynamic panel must be in it, otherwise parentDynamicPanel would be undefined.
                 var panelPath = masterPath;
                 panelPath[panelPath.length] = parentDynamicPanel;
-                panelId = $ax.getElementIdFromPath(panelPath, { itemNum: itemNum });
-                if(!panelId) return undefined;
-                var panelRepeater = $ax.getParentRepeaterFromElementId(panelId);
-                if(!parentRepeater || panelRepeater) {
-                    parentType = 'state';
-                    parent = panelId + '_state' + obj.panelIndex;
-                }
+                var panelId = $ax.getElementIdFromPath(panelPath, {itemNum: itemNum});
+                var panelRepeater = $ax.getParentRepeaterFromScriptId($ax.repeater.getScriptIdFromElementId(panelId));
+                if(!parentRepeater || panelRepeater) return panelId + '_state' + obj.panelIndex;
             }
 
-            // If at top or parent type is desired, then return parent, otherwise keep climbing
-            return !parent || filter.indexOf(parentType) != -1 ? parent : getParent(parent);
+            return parent;
         };
 
         for(var i = 0; i < elementIds.length; i++) {
@@ -260,9 +222,10 @@
                 var parents = [];
                 while(parent) {
                     parents[parents.length] = parent;
-                    // If id is not a valid object, you are either repeater item or dynamic panel state
-                    //if(!$obj(parent)) parent = $ax.visibility.getWidgetFromContainer($jobj(parent).parent().attr('id'));
-
+                    // If id is not a valid object, you are either repeater item
+                    if(!$obj(parent)) parent = $jobj(parent).parent().attr('id');
+                    // or dynamic panel state.
+                    if(!$obj(parent)) parent = $jobj(parent).parent().attr('id');
                     parent = getParent(parent);
                 }
                 parent = parents;
@@ -272,7 +235,7 @@
         return parentIds;
     };
 
-    // Get the path to the child, where non leaf nodes can be masters, layers, dynamic panels, and repeaters.
+    // Get the path to the child, where non leaf nodes can be masters, dynamic panels, and repeaters.
     $ax.public.fn.getChildren = function(deep) {
         var elementIds = this.getElementIds();
         var children = [];
@@ -281,17 +244,15 @@
             var obj = $obj(elementId);
             if(!obj) return undefined;
 
-            var isRepeater = obj.type == $ax.constants.REPEATER_TYPE;
-            var isDynamicPanel = obj.type == $ax.constants.DYNAMIC_PANEL_TYPE;
-            var isLayer = obj.type == $ax.constants.LAYER_TYPE;
-            var isMaster = obj.type == $ax.constants.MASTER_TYPE;
+            var isRepeater = obj.type == 'repeater';
+            var isDynamicPanel = obj.type == 'dynamicPanel';
+            var isMaster = obj.type == 'master';
             
-            var isMenu = obj.type == $ax.constants.MENU_OBJECT_TYPE;
-            var isTreeNode = obj.type == $ax.constants.TREE_NODE_OBJECT_TYPE;
-            var isTable = obj.type == $ax.constants.TABLE_TYPE;
-            //var isCompoundVector = obj.type == $ax.constants.VECTOR_SHAPE_TYPE && obj.generateCompound;
+            var isMenu = obj.type == 'menuObject';
+            var isTreeNode = obj.type == 'treeNodeObject';
+            var isTable = obj.type == 'table';
 
-            if (isRepeater || isDynamicPanel || isLayer || isMaster || isMenu || isTreeNode || isTable) {// || isCompoundVector) {
+            if(isRepeater || isDynamicPanel || isMaster || isMenu || isTreeNode || isTable) {
                 // Find parent that children should be pulled from. Default is just the elementId query (used by table and master)
                 var parent = $jobj(elementId);
                 if(isRepeater) {
@@ -300,16 +261,11 @@
                     for(var itemIndex = 0; itemIndex < itemIds.length; itemIndex++) parent = parent.add($jobj($ax.repeater.createElementId(elementId, itemIds[itemIndex])));
                 } else if(isDynamicPanel) {
                     // Really only need to do active state probably...
-                    parent = $jobj(elementId).children();
-                    // Get through all containers
-                    while ($(parent[0]).attr('id').indexOf('container') != -1) parent = parent.children();
-                    // Now at states, but want states content
-                    parent = parent.children();
+                    parent = $jobj(elementId).children().children();
                 } else if(isTreeNode) parent = $jobj($ax.repeater.applySuffixToElementId(elementId, '_children'));
 
                 // Menu doesn't want all children, only tables and menus, so it must be handled specially
                 var children = isMenu ? parent.children('.ax_table').add(parent.children('.ax_menu')) : parent.children();
-                children = $ax.visibility.getRealChildren(_fixForBasicLinks(children));
                 
                 // For tree nodes you want the the button shape contained by the elementQuery too
                 if(isTreeNode) {
@@ -317,7 +273,7 @@
                     for(var treeNodeIndex = 0; treeNodeIndex < treeNodeChildren.length; treeNodeIndex++) {
                         var treeNodeChild = $(treeNodeChildren[treeNodeIndex]);
                         var childObj = $obj(treeNodeChild.attr('id'));
-                        if (childObj && $ax.public.fn.IsVector(childObj.type)) children = children.add(treeNodeChild);
+                        if(childObj && childObj.type == 'buttonShape') children = children.add(treeNodeChild);
                     }
                 }
                 
@@ -327,9 +283,7 @@
                     var childObj = $(children[childIndex]);
                     var id = childObj.attr('id');
                     if(typeof(id) == 'undefined' && childObj.is('a')) id = $(childObj.children()[0]).attr('id');
-                    // Ignore annotations and any other children that are not elements
-                    if (id.split('_').length > 1) continue;
-
+                        
                     childrenIds.push(id);
                 }
                 
@@ -352,16 +306,6 @@
             children[children.length] = { id : elementIds[i], children : getChildren(elementIds[i])};
         }
         return children;
-    };
-
-    var _fixForBasicLinks = function(query) {
-        var retval = $();
-        for(var i = 0; i < query.length; i++) {
-            var child = $(query[i]);
-            if(child.hasClass('basiclink')) retval = retval.add(child.children());
-            else retval = retval.add(child);
-        }
-        return retval;
     };
 
 })();

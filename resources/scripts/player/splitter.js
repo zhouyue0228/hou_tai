@@ -74,15 +74,12 @@ $.fn.splitter = function(args){
                Math.min(newPos, A._max, splitter._DA - bar._DA - B._min));
          // Resize/position the two panes
          bar._DA = bar[0][opts.pxSplit];      // bar size may change during dock
-
-         var posOffset = bar.is(':visible') ? bar._DA - 1 : 0;
-
-         bar.css(opts.origin, newPos - posOffset).css(opts.fixed, splitter._DF);
+         bar.css(opts.origin, newPos).css(opts.fixed, splitter._DF);
          A.css(opts.origin, 0).css(opts.split, newPos).css(opts.fixed,  splitter._DF);
-         B.css(opts.origin, newPos + bar._DA - posOffset)
+         B.css(opts.origin, newPos+bar._DA)
             .css(opts.split, splitter._DA-bar._DA-newPos).css(opts.fixed,  splitter._DF);
          // IE fires resize for us; all others pay cash
-         if ( !IE_10_AND_BELOW )
+         if ( !IE )
             panes.trigger("resize");
       }
       function dimSum(jq, dims) {
@@ -191,10 +188,10 @@ $.fn.splitter = function(args){
             var top = splitter.offset().top;
             var wh = $(window).height();
             splitter.css("height", Math.max(wh-top-splitter._hadjust, splitter._hmin)+"px");
-            if ( !IE_10_AND_BELOW ) splitter.trigger("resize");
+            if ( !IE ) splitter.trigger("resize");
          }).trigger("resize");
       }
-      else if ( opts.resizeToWidth && !IE_10_AND_BELOW )
+      else if ( opts.resizeToWidth && !IE )
          $(window).bind("resize", function(){
             splitter.trigger("resize");
          });

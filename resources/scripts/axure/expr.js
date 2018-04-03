@@ -2,30 +2,17 @@
 $axure.internal(function($ax) {
     var _expr = $ax.expr = {};
     var _binOpHandlers = {
-        '&&': function(left, right) { return _binOpOverride(left, right, function(left) { return $ax.getBool(left) && $ax.getBool(right()); }); },
-        '||': function(left, right) { return _binOpOverride(left, right, function(left) { return $ax.getBool(left) || $ax.getBool(right()); }); },
-        '==': function(left, right) { return isEqual(left, right, true); },
-        '!=': function(left, right) { return !isEqual(left, right, true); },
-        '>': function(left, right) { return _binOpNum(left, right, function(left, right) { return left > right; }); },
-        '<': function(left, right) { return _binOpNum(left, right, function(left, right) { return left < right; }); },
-        '>=': function(left, right) { return _binOpNum(left, right, function(left, right) { return left >= right; }); },
-        '<=': function(left, right) { return _binOpNum(left, right, function(left, right) { return left <= right; }); }
+        '&&': function(left, right) { return $ax.getBool(left) && $ax.getBool(right); },
+        '||': function(left, right) { return $ax.getBool(left) || $ax.getBool(right); },
+        '==': function(left, right) { return isEqual(left, right); },
+        '!=': function(left, right) { return !isEqual(left, right); },
+        '>': function(left, right) { return left > Number(right); },
+        '<': function(left, right) { return left < Number(right); },
+        '>=': function(left, right) { return left >= Number(right); },
+        '<=': function(left, right) { return left <= Number(right); }
     };
 
-    var checkOps = function(left, right) {
-        return left == undefined || right == undefined;
-    };
-
-    var isEqual = function (left, right, isFunction) {
-        if (isFunction) {
-            //if left and right is function, then get the value
-            //otherwise left and right should be already the value we want
-            left = left();
-            right = right();
-        }
-
-        if(checkOps(left, right)) return false;
-
+    var isEqual = function(left, right) {
         if(left instanceof Date && right instanceof Date) {
             if(left.getMilliseconds() != right.getMilliseconds()) return false;
             if(left.getSeconds() != right.getSeconds()) return false;
@@ -45,7 +32,7 @@ $axure.internal(function($ax) {
                 // If left has a property that the right doesn't they are not equal.
                 if(!right.hasOwnProperty(prop)) return false;
                 // If any of their properties are not equal, they are not equal.
-                if(!isEqual(left[prop], right[prop], false)) return false;
+                if(!isEqual(left[prop], right[prop])) return false;
             }
 
             for(prop in right) {
@@ -58,21 +45,6 @@ $axure.internal(function($ax) {
         return $ax.getBool(left) == $ax.getBool(right);
     };
 
-    var _binOpOverride = function(left, right, func) {
-        left = left();
-        if(left == undefined) return false;
-        var res = func(left, right);
-        return res == undefined ? false : res;
-    };
-
-    var _binOpNum = function(left, right, func) {
-        var left = left();
-        var right = right();
-        if(checkOps(left, right)) return false;
-
-        return func(left, Number(right));
-    };
-
     var _exprHandlers = {};
     _exprHandlers.array = function(expr, eventInfo) {
         var returnVal = [];
@@ -83,8 +55,8 @@ $axure.internal(function($ax) {
     };
 
     _exprHandlers.binaryOp = function(expr, eventInfo) {
-        var left = function() { return expr.leftExpr && _evaluateExpr(expr.leftExpr, eventInfo); };
-        var right = function() { return expr.rightExpr && _evaluateExpr(expr.rightExpr, eventInfo); };
+        var left = expr.leftExpr && _evaluateExpr(expr.leftExpr, eventInfo);
+        var right = expr.rightExpr && _evaluateExpr(expr.rightExpr, eventInfo);
 
         if(left == undefined || right == undefined) return false;
         return _binOpHandlers[expr.op](left, right);
@@ -197,10 +169,6 @@ $axure.internal(function($ax) {
         return expr.id;
     };
 
-    _exprHandlers.optionLiteral = function(expr) {
-        return expr.value;
-    }
-
     var _substituteSTOs = function(expr, eventInfo) {
         //first evaluate the local variables
         var scope = {};
@@ -232,11 +200,8 @@ $axure.internal(function($ax) {
         return retval || retvalString;
     };
 
-    _exprHandlers.htmlLiteral = function (expr, eventInfo) {
-        eventInfo.htmlLiteral = true;
-        var html = _substituteSTOs(expr, eventInfo);
-        eventInfo.htmlLiteral = false
-        return html;
+    _exprHandlers.htmlLiteral = function(expr, eventInfo) {
+        return _substituteSTOs(expr, eventInfo);
     };
 
     _exprHandlers.stringLiteral = function(expr, eventInfo) {
@@ -288,7 +253,7 @@ $axure.internal(function($ax) {
         if(window.lastFocusedControl) {
             var elementId = window.lastFocusedControl;
             var type = $obj(elementId).type;
-            if ($ax.public.fn.IsTextBox(type) || $ax.public.fn.IsTextArea(type)) _exprFunctions.SetWidgetFormText([elementId], value);
+            if(type == 'textBox' || type == 'textArea') _exprFunctions.SetWidgetFormText([elementId], value);
             else _exprFunctions.SetWidgetRichText([elementId], value, true);
         }
     };
@@ -303,7 +268,7 @@ $axure.internal(function($ax) {
         value = _exprFunctions.ToString(value);
 
         //Replace any newlines with line breaks
-        var finalValue = value.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
+        value = value.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
 
         for(var i = 0; i < ids.length; i++) {
             var id = ids[i];
@@ -315,7 +280,7 @@ $axure.internal(function($ax) {
             }
 
             var element = window.document.getElementById(id);
-            $ax.visibility.SetVisible(element, value != '');
+            $ax.visibility.SetVisible(element, true);
 
             $ax.style.transformTextWithVerticalAlignment(id, function() {
                 var spans = $jobj(id).find('span');
@@ -326,24 +291,7 @@ $axure.internal(function($ax) {
                         span.attr('style', $(spans[0]).attr('style'));
                         span.attr('id', $(spans[0]).attr('id'));
                     }
-
-                    // Can't set value as text because '<br/>' doesn't actually do a line break
-                    // Can't set vaule as html because it doesn't like '<' and ignores all after it
-                    // Create tags yourself
-                    var lines = value.split(/\r\n|\n/);
-                    if(lines.length == 1) span.text(value);
-                    else {
-                        for(var i = 0; i < lines.length; i++) {
-                            if (i != 0) span.append($('<br />'));
-                            var line = lines[i];
-                            if(line.length == 0) continue;
-
-                            var subSpan = $('<span />');
-                            subSpan.text(line);
-                            span.append(subSpan);
-                        }
-                    }
-
+                    span.html(value);
                     var p = $('<p></p>');
                     var ps = $jobj(id).find('p');
                     if(ps.length > 0) {
@@ -351,10 +299,10 @@ $axure.internal(function($ax) {
                         p.attr('id', $(ps[0]).attr('id'));
                     }
                     p.append(span);
-                    finalValue = $('<div></div>').append(p).html();
+                    value = $('<div></div>').append(p).html();
                 }
 
-                element.innerHTML = finalValue;
+                element.innerHTML = value;
             });
 
             if(!plain) $ax.style.CacheOriginalText(id, true);
@@ -365,9 +313,8 @@ $axure.internal(function($ax) {
         return $ax('#' + ids[0]).selected();
     };
 
-    _exprFunctions.GetSelectedOption = function (ids) {
-        var inputs = $jobj($ax.INPUT(ids[0]));
-        return inputs.length ? inputs[0].value : '';
+    _exprFunctions.GetSelectedOption = function(ids) {
+        return $jobj($ax.INPUT(ids[0]))[0].value;
     };
 
     _exprFunctions.GetNum = function(str) {
@@ -475,11 +422,9 @@ $axure.internal(function($ax) {
         return rects;
     };
 
-    _exprFunctions.GetWidgetRectangles = function (elementIds, eventInfo) {
-        var elementId = elementIds[0];
+    _exprFunctions.GetWidgetRectangles = function(elementId, eventInfo) {
         var rects = new Object();
         var jObj = $jobj(elementId);
-        var axObj = $ax('#' + elementId);
         var invalid = jObj.length == 0;
         var parent = jObj;
         // Or are in valid if no obj can be found, or if it is not visible.
@@ -494,13 +439,11 @@ $axure.internal(function($ax) {
             rects.lastRect = rects.currentRect = new $ax.drag.Rectangle(-1, -1, -1, -1);
             return rects;
         }
-
         rects.lastRect = new $ax.drag.Rectangle(
-                axObj.left(),
-                axObj.top(),
-                axObj.width(),
-                axObj.height());
-
+                $ax.legacy.getAbsoluteLeft(jObj),
+                $ax.legacy.getAbsoluteTop(jObj),
+                jObj.width(),
+                jObj.height());
         rects.currentRect = rects.lastRect;
         return rects;
     };

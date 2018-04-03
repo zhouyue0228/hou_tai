@@ -4,14 +4,11 @@
     $axure.utils.makeBindable($ax.adaptive, ["viewChanged"]);
 
     var _auto = true;
-    var _autoIsHandledBySidebar = false;
-
     var _views;
     var _idToView;
     var _enabledViews = [];
 
     var _initialViewToLoad;
-    var _initialViewSizeToLoad;
 
     var _loadFinished = false;
     $ax.adaptive.loadFinished = function() {
@@ -21,9 +18,8 @@
         else $ax.postAdaptiveViewChanged();
     };
 
-    var _handleResize = function(forceSwitchTo) {
+    var _handleResize = function() {
         if(!_auto) return;
-        if(_auto && _autoIsHandledBySidebar && !forceSwitchTo) return;
 
         var $window = $(window);
         var height = $window.height();
@@ -32,7 +28,7 @@
         var toView = _getAdaptiveView(width, height);
         var toViewId = toView && toView.id;
 
-        _switchView(toViewId, forceSwitchTo);
+        _switchView(toViewId);
     };
 
     var _setAuto = $ax.adaptive.setAuto = function(val) {
@@ -46,19 +42,14 @@
         if(imageUrl.indexOf(".png") > -1) $ax.utils.fixPng(imageQuery[0]);
     };
 
-    var _switchView = function (viewId, forceSwitchTo) {
-        if(!$ax.pageData.isAdaptiveEnabled) return;
-
+    var _switchView = function(viewId) {
         var previousViewId = $ax.adaptive.currentViewId;
         if(typeof previousViewId == 'undefined') previousViewId = '';
         if(typeof viewId == 'undefined') viewId = '';
-        if (viewId == previousViewId) {
-            if(forceSwitchTo) $ax.postAdaptiveViewChanged(forceSwitchTo);
-            return;
-        }
+        if(viewId == previousViewId) return;
 
         $ax('*').each(function(obj, elementId) {
-            if (!$ax.public.fn.IsTreeNodeObject(obj.type)) return;
+            if(obj.type != 'treeNodeObject') return;
             if(!obj.hasOwnProperty('isExpanded')) return;
 
             var query = $ax('#' + elementId);
@@ -67,23 +58,12 @@
             query.expanded(defaultExpanded);
         });
 
-        // reset all the positioning on the style tags, including size and transformation
+        // reset all the positioning on the style tags
         $axure('*').each(function(diagramObject, elementId) {
             var element = document.getElementById(elementId);
             if(element && !diagramObject.isContained) {
-                var resetCss = {
-                    top: "", left: "", width: "", height: "", opacity: "",
-                    transform: "", webkitTransform: "", MozTransform: "", msTransform: "", OTransform: ""
-                };
-                var query = $(element);
-                var children = query.children();
-                var sketchyImage = $('#' + $ax.repeater.applySuffixToElementId(elementId, '_image_sketch'));
-                var textChildren = query.children('div.text');
-
-                query.css(resetCss);
-                if(children) children.css(resetCss);
-                if(sketchyImage) sketchyImage.css(resetCss);
-                if(textChildren) textChildren.css(resetCss);
+                element.style.top = "";
+                element.style.left = "";
 
                 $ax.dynamicPanelManager.resetFixedPanel(diagramObject, element);
                 $ax.dynamicPanelManager.resetAdaptivePercentPanel(diagramObject, element);
@@ -94,20 +74,12 @@
         if(previousViewId) {
             $ax.style.clearAdaptiveStyles();
             $('*').removeClass(previousViewId);
-        } else {
-            $ax.style.reselectElements();
         }
-
-        $axure('*').each(function(obj, elementId) {
-            $ax.style.updateElementIdImageStyle(elementId); // When image override exists, fix styling/borders
-        });
 
         // reset all the images only if we're going back to the default view
         if(!viewId) {
             _updateInputVisibility('', $axure('*'));
             $axure('*').each(function(diagramObject, elementId) {
-                $ax.placeholderManager.refreshPlaceholder(elementId);
-
                 var images = diagramObject.images;
                 if(diagramObject.type == 'horizontalLine' || diagramObject.type == 'verticalLine') {
                     var startImg = images['start~'];
@@ -116,35 +88,19 @@
                     _setLineImage(elementId + "_end", endImg);
                     var lineImg = images['line~'];
                     _setLineImage(elementId + "_line", lineImg);
-                } else if(diagramObject.type == $ax.constants.CONNECTOR_TYPE) {
-                    _setAdaptiveConnectorImages(elementId, images, '');
-                } else if(images) {
-                    if (diagramObject.generateCompound) {
-
-                        if($ax.style.IsWidgetDisabled(elementId)) {
-                            disabledImage = _getImageWithTag(images, 'disabled~');
-                            if(disabledImage) $ax.style.applyImage(elementId, disabledImage, 'disabled');
-                            return;
-                        }
-                        if($ax.style.IsWidgetSelected(elementId)) {
-                            selectedImage = _getImageWithTag(images, 'selected~');
-                            if(selectedImage) $ax.style.applyImage(elementId, selectedImage, 'selected');
-                            return;
-                        }
-                        $ax.style.applyImage(elementId, _getImageWithTag(images, 'normal~'));
-                    } else {
-                        if ($ax.style.IsWidgetDisabled(elementId)) {
-                            var disabledImage = $ax.style.getElementImageOverride(elementId, 'disabled') || images['disabled~'];
-                            if (disabledImage) $ax.style.applyImage(elementId, disabledImage, 'disabled');
-                            return;
-                        }
-                        if ($ax.style.IsWidgetSelected(elementId)) {
-                            var selectedImage = $ax.style.getElementImageOverride(elementId, 'selected') || images['selected~'];
-                            if (selectedImage) $ax.style.applyImage(elementId, selectedImage, 'selected');
-                            return;
-                        }
-                        $ax.style.applyImage(elementId, $ax.style.getElementImageOverride(elementId, 'normal') || images['normal~']);
+                } else {
+                    if(!images) return;
+                    if($ax.style.IsWidgetDisabled(elementId)) {
+                        var disabledImage = $ax.style.getElementImageOverride(elementId, 'disabled') || images['disabled~'];
+                        if(disabledImage) $ax.style.applyImage(elementId, disabledImage, 'disabled');
+                        return;
                     }
+                    if($ax.style.IsWidgetSelected(elementId)) {
+                        var selectedImage = $ax.style.getElementImageOverride(elementId, 'selected') || images['selected~'];
+                        if(selectedImage) $ax.style.applyImage(elementId, selectedImage, 'selected');
+                        return;
+                    }
+                    $ax.style.applyImage(elementId, $ax.style.getElementImageOverride(elementId, 'normal') || images['normal~']);
                 }
 
                 var child = $jobj(elementId).children('.text');
@@ -162,17 +118,8 @@
         }
 
         $ax.adaptive.triggerEvent('viewChanged', {});
-        if(_loadFinished) $ax.viewChangePageAndMasters(forceSwitchTo);
+        if(_loadFinished) $ax.viewChangePageAndMasters();
     };
-
-    var _getImageWithTag  = function(image, tag) {
-        var flattened = {};
-        for (var component in image) {
-            var componentImage = image[component][tag];
-            if(componentImage) flattened[component] = componentImage;
-        }
-        return flattened;
-    }
 
     // gets if input is hidden due to sketch
     var BORDER_WIDTH = "borderWidth";
@@ -252,15 +199,6 @@
         }
     };
 
-    var _setAdaptiveConnectorImages = function (elementId, images, view) {
-        var conn = $jobj(elementId);
-        var count = conn.children().length-1; // -1 for rich text panel
-        for(var i = 0; i < count; i++) {
-            var img = images['' + i + '~' + view];
-            $jobj(elementId + '_seg' + i).attr('src', img);
-        }
-    };
-
     var _applyView = $ax.adaptive.applyView = function(viewId, query) {
         var limboIds = {};
         var hiddenIds = {};
@@ -293,10 +231,7 @@
         for(var i = 0; i < viewIdChain.length; i++) {
             var viewId = viewIdChain[i];
             var viewStyle = diagramObject.adaptiveStyles[viewId];
-            if(viewStyle) {
-                adaptiveChain[adaptiveChain.length] = viewStyle;
-                if (viewStyle.size) $ax.public.fn.convertToSingleImage($jobj(elementId));
-            }
+            if(viewStyle) adaptiveChain[adaptiveChain.length] = viewStyle;
         }
 
         var state = $ax.style.generateState(elementId);
@@ -306,12 +241,7 @@
         if(images) {
             if(diagramObject.type == 'horizontalLine' || diagramObject.type == 'verticalLine') {
                 _setAdaptiveLineImages(elementId, images, viewIdChain);
-            } else if (diagramObject.type == $ax.constants.CONNECTOR_TYPE) {
-                _setAdaptiveConnectorImages(elementId, images, viewId);
-            } else if (diagramObject.generateCompound) {
-                var compoundUrl = _matchImageCompound(diagramObject, elementId, viewIdChain, state);
-                if (compoundUrl) $ax.style.applyImage(elementId, compoundUrl, state);
-            }else {
+            } else {
                 var imgUrl = _matchImage(elementId, images, viewIdChain, state);
                 if(imgUrl) $ax.style.applyImage(elementId, imgUrl, state);
             }
@@ -337,10 +267,9 @@
             $ax.style.setAdaptiveStyle(elementId, adaptiveStyle);
         }
 
-        var scriptId = $ax.repeater.getScriptIdFromElementId(elementId);
-        if(compoundStyle.limbo && !diagramObject.isContained) limboIds[scriptId] = true;
+        if(compoundStyle.limbo && !diagramObject.isContained) limboIds[elementId] = true;
         // sigh, javascript. we need the === here because undefined means not overriden
-        if(compoundStyle.visible === false) hiddenIds[scriptId] = true;
+        if(compoundStyle.visible === false) hiddenIds[elementId] = true;
     };
 
     var _matchImage = function(id, images, viewIdChain, state) {
@@ -366,23 +295,15 @@
         return images['normal~']; // this is the default
     };
 
-    var _matchImageCompound = function(diagramObject, id, viewIdChain, state) {
-        var images = [];
-        for(var i = 0; i < diagramObject.compoundChildren.length; i++) {
-            var component = diagramObject.compoundChildren[i];
-            images[component] = _matchImage(id, diagramObject.images[component], viewIdChain, state);
-        }
-        return images;
-    };
-
-
-
     $ax.adaptive.getImageForStateAndView = function(id, state) {
         var viewIdChain = _getAdaptiveIdChain($ax.adaptive.currentViewId);
         var diagramObject = $ax.getObjectFromElementId(id);
-        if (diagramObject.generateCompound) return _matchImageCompound(diagramObject, id, viewIdChain, state);
-        else return _matchImage(id, diagramObject.images, viewIdChain, state);
+        var images = diagramObject.images;
+
+        return _matchImage(id, images, viewIdChain, state);
     };
+
+
 
     var _getAdaptiveView = function(winWidth, winHeight) {
         var _isViewOneGreaterThanTwo = function(view1, view2) {
@@ -446,21 +367,9 @@
             if(!_isAdaptiveInitialized()) {
                 _initialViewToLoad = view;
             } else _handleLoadViewId(view);
-        } else if(message == 'setAdaptiveViewForSize') {
-            _autoIsHandledBySidebar = true;
-            if(!_isAdaptiveInitialized()) {
-                _initialViewSizeToLoad = data;
-            } else _handleSetViewForSize(data.width, data.height);
         }
     });
 
-    $ax.adaptive.setAdaptiveView = function(view) {
-        var viewIdForSitemapToUnderstand = view == 'auto' ? undefined : (view == 'default' ? '' : view);
-
-        if(!_isAdaptiveInitialized()) {
-            _initialViewToLoad = viewIdForSitemapToUnderstand;
-        } else _handleLoadViewId(viewIdForSitemapToUnderstand);
-    };
 
     $ax.adaptive.initialize = function() {
         _views = $ax.document.adaptiveViews;
@@ -477,8 +386,7 @@
                 _enabledViews[_enabledViews.length] = _idToView[enabledViewIds[i]];
             }
 
-            if(_autoIsHandledBySidebar && _initialViewSizeToLoad) _handleSetViewForSize(_initialViewSizeToLoad.width, _initialViewSizeToLoad.height);
-            else _handleLoadViewId(_initialViewToLoad);
+            _handleLoadViewId(_initialViewToLoad);
         }
 
         $axure.resize(function(e) {
@@ -487,21 +395,13 @@
         });
     };
 
-    var _handleLoadViewId = function (loadViewId, forceSwitchTo) {
+    var _handleLoadViewId = function(loadViewId) {
         if(typeof loadViewId != 'undefined') {
             _setAuto(false);
-            _switchView(loadViewId != 'default' ? loadViewId : '', forceSwitchTo);
+            _switchView(loadViewId != 'default' ? loadViewId : '');
         } else {
             _setAuto(true);
-            _handleResize(forceSwitchTo);
+            _handleResize();
         }
-    };
-
-    var _handleSetViewForSize = function (width, height) {
-        if(!_auto) return;
-
-        var toView = _getAdaptiveView(width, height);
-        var toViewId = toView && toView.id;
-        _switchView(toViewId);
     };
 });

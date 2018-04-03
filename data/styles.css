@@ -1,4 +1,4 @@
-﻿.ax_default {
+﻿.ax_形状 {
   font-family:'ArialMT', 'Arial';
   font-weight:400;
   font-style:normal;
@@ -7,162 +7,241 @@
   text-align:center;
   line-height:normal;
 }
-._形状 {
+.ax_文本段落 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:left;
+  line-height:normal;
 }
-._一级标题 {
+.ax_h1 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
   font-size:32px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._二级标题 {
+.ax_h2 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
   font-size:24px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._三级标题 {
+.ax_h3 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
   font-size:18px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._四级标题 {
+.ax_h4 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
   font-size:14px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._五级标题 {
+.ax_h5 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
+  font-size:13px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._六级标题 {
+.ax_h6 {
   font-family:'Arial-BoldMT', 'Arial Bold', 'Arial';
   font-weight:700;
   font-style:normal;
   font-size:10px;
+  color:#333333;
   text-align:left;
+  line-height:normal;
 }
-._文本段落 {
-  text-align:left;
-}
-._流程形状 {
-}
-._垂直线 {
-}
-._连接线 {
-}
-.sticky_2 {
-  text-align:left;
-}
-._文本段落1 {
-  font-family:'微软雅黑';
+.ax_image {
+  font-family:'ArialMT', 'Arial';
   font-weight:400;
   font-style:normal;
-  font-size:12px;
-  color:#949494;
-  text-align:left;
-  line-height:22px;
-}
-._五级标题1 {
-  font-family:'微软雅黑';
-  font-weight:400;
-  font-style:normal;
-  font-size:14px;
-  color:#5E5E5E;
-  text-align:left;
-}
-.box_1 {
-}
-.box_2 {
-}
-.checkbox {
-  text-align:left;
-}
-.label {
-  font-size:14px;
-  text-align:left;
-}
-._图片 {
-}
-.primary_button {
-  color:#FFFFFF;
-}
-.link_button {
-  color:#169BD5;
-}
-.text_field {
+  font-size:13px;
   color:#000000;
-  text-align:left;
-}
-.droplist {
-  color:#000000;
-  text-align:left;
-}
-.list_box {
-  color:#000000;
-  text-align:left;
-}
-.radio_button {
-  text-align:left;
-}
-.html_button {
   text-align:center;
+  line-height:normal;
 }
-.tree_node {
-  text-align:left;
+.ax_文本链接 {
 }
-.table_cell {
+.ax_鼠标悬停文本链接时 {
+  color:#ED1C24;
 }
-.text_area {
+.ax_鼠标按下文本链接时 {
+}
+.ax_文本框 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
   color:#000000;
   text-align:left;
+  line-height:normal;
 }
-.button {
-}
-.line {
-}
-._图片1 {
-}
-.box_3 {
-}
-.ellipse {
-}
-._水平线 {
-}
-._下拉列表框 {
+.ax_多行文本框 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
   color:#000000;
   text-align:left;
+  line-height:normal;
 }
-._文本框 {
+.ax_下拉列表框 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
   color:#000000;
   text-align:left;
+  line-height:normal;
 }
-._提交按钮 {
-  color:#000000;
-}
-._复选框 {
-  text-align:left;
-}
-.image {
-  color:#000000;
-}
-.icon {
-}
-.text_area1 {
+.ax_列表框 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
   color:#000000;
   text-align:left;
+  line-height:normal;
 }
-._表格 {
+.ax_复选框 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:left;
+  line-height:normal;
 }
-._单元格 {
+.ax_单选按钮 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:left;
+  line-height:normal;
 }
-.flow_shape {
+.ax_流程形状 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_tree_node {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:left;
+  line-height:normal;
+}
+.ax_提交按钮 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#000000;
+  text-align:center;
+  line-height:normal;
+}
+.ax_热区 {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_内联框架 {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_动态面板 {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_master {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_中继器 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_表格 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_单元格 {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:left;
+  line-height:normal;
+}
+.ax_菜单 {
+  font-size:13px;
+  color:#000000;
+  text-align:center;
+  line-height:normal;
+}
+.ax_水平线 {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_垂直线 {
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
+}
+.ax_connector {
+  font-family:'ArialMT', 'Arial';
+  font-weight:400;
+  font-style:normal;
+  font-size:13px;
+  color:#333333;
+  text-align:center;
+  line-height:normal;
 }
